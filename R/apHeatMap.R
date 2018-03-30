@@ -3,8 +3,10 @@ require(RColorBrewer)
 require(memoise)
 library("flashClust")
 
-lo = function(rown, coln, nrow, ncol, cellheight = NA, cellwidth = NA, 
-              treeheight_col, treeheight_row, legend, annotation, annotation_colors, annotation_legend, 
+
+
+lo = function(rown, coln, nrow, ncol, cellheight = NA, cellwidth = NA,
+              treeheight_col, treeheight_row, legend, annotation, annotation_colors, annotation_legend,
               main, fontsize, fontsize_row, fontsize_col, ...){
   # Get height of colnames and length of rownames
   if(!is.null(coln[1])){
@@ -15,7 +17,7 @@ lo = function(rown, coln, nrow, ncol, cellheight = NA, cellwidth = NA,
   else{
     coln_height = unit(5, "bigpts")
   }
-  
+
   if(!is.null(rown[1])){
     longest_rown = which.max(strwidth(rown, units = 'in'))
     gp = list(fontsize = fontsize_row, ...)
@@ -24,7 +26,7 @@ lo = function(rown, coln, nrow, ncol, cellheight = NA, cellwidth = NA,
   else{
     rown_width = unit(5, "bigpts")
   }
-  
+
   gp = list(fontsize = fontsize, ...)
   # Legend position
   if(!is.na(legend[1])){
@@ -37,7 +39,7 @@ lo = function(rown, coln, nrow, ncol, cellheight = NA, cellwidth = NA,
   else{
     legend_width = unit(0, "bigpts")
   }
-  
+
   # Set main title height
   if(is.na(main)){
     main_height = unit(0, "npc")
@@ -45,10 +47,10 @@ lo = function(rown, coln, nrow, ncol, cellheight = NA, cellwidth = NA,
   else{
     main_height = unit(1.5, "grobheight", textGrob(main, gp = gpar(fontsize = 1.3 * fontsize, ...)))
   }
-  
+
   # Column annotations
   if(!is.na(annotation[[1]][1])){
-    # Column annotation height 
+    # Column annotation height
     annot_height = unit(ncol(annotation) * (8 + 2) + 2, "bigpts")
     # Width of the correponding legend
     longest_ann = which.max(nchar(as.matrix(annotation)))
@@ -61,11 +63,11 @@ lo = function(rown, coln, nrow, ncol, cellheight = NA, cellwidth = NA,
     annot_height = unit(0, "bigpts")
     annot_legend_width = unit(0, "bigpts")
   }
-  
+
   # Tree height
   treeheight_col = unit(treeheight_col, "bigpts") + unit(5, "bigpts")
-  treeheight_row = unit(treeheight_row, "bigpts") + unit(5, "bigpts") 
-  
+  treeheight_row = unit(treeheight_row, "bigpts") + unit(5, "bigpts")
+
   # Set cell sizes
   if(is.na(cellwidth)){
     matwidth = unit(1, "npc") - rown_width - legend_width - treeheight_row - annot_legend_width
@@ -73,26 +75,26 @@ lo = function(rown, coln, nrow, ncol, cellheight = NA, cellwidth = NA,
   else{
     matwidth = unit(cellwidth * ncol, "bigpts")
   }
-  
+
   if(is.na(cellheight)){
     matheight = unit(1, "npc") - main_height - coln_height - treeheight_col - annot_height
   }
   else{
     matheight = unit(cellheight * nrow, "bigpts")
-  }  
-  
-  
+  }
+
+
   # Produce layout()
   pushViewport(viewport(layout = grid.layout(nrow = 5, ncol = 5, widths = unit.c(treeheight_row, matwidth, rown_width, legend_width, annot_legend_width), heights = unit.c(main_height, treeheight_col, annot_height, matheight, coln_height)), gp = do.call(gpar, gp)))
-  
+
   # Get cell dimensions
   pushViewport(vplayout(4, 2))
   cellwidth = convertWidth(unit(0:1, "npc"), "bigpts", valueOnly = T)[2] / ncol
   cellheight = convertHeight(unit(0:1, "npc"), "bigpts", valueOnly = T)[2] / nrow
   upViewport()
-  
+
   # Return minimal cell dimension in bigpts to decide if borders are drawn
-  mindim = min(cellwidth, cellheight) 
+  mindim = min(cellwidth, cellheight)
   return(mindim)
 }
 
@@ -101,34 +103,34 @@ draw_dendrogram = function(hc, horizontal = T){
   m = hc$merge
   o = hc$order
   n = length(o)
-  
-  m[m > 0] = n + m[m > 0] 
+
+  m[m > 0] = n + m[m > 0]
   m[m < 0] = abs(m[m < 0])
-  
-  dist = matrix(0, nrow = 2 * n - 1, ncol = 2, dimnames = list(NULL, c("x", "y"))) 
+
+  dist = matrix(0, nrow = 2 * n - 1, ncol = 2, dimnames = list(NULL, c("x", "y")))
   dist[1:n, 1] = 1 / n / 2 + (1 / n) * (match(1:n, o) - 1)
-  
+
   for(i in 1:nrow(m)){
     dist[n + i, 1] = (dist[m[i, 1], 1] + dist[m[i, 2], 1]) / 2
     dist[n + i, 2] = h[i]
   }
-  
+
   draw_connection = function(x1, x2, y1, y2, y){
     grid.lines(x = c(x1, x1), y = c(y1, y))
     grid.lines(x = c(x2, x2), y = c(y2, y))
     grid.lines(x = c(x1, x2), y = c(y, y))
   }
-  
+
   if(horizontal){
     for(i in 1:nrow(m)){
       draw_connection(dist[m[i, 1], 1], dist[m[i, 2], 1], dist[m[i, 1], 2], dist[m[i, 2], 2], h[i])
     }
   }
-  
+
   else{
     gr = rectGrob()
     pushViewport(viewport(height = unit(1, "grobwidth", gr), width = unit(1, "grobheight", gr), angle = 90))
-    dist[, 1] = 1 - dist[, 1] 
+    dist[, 1] = 1 - dist[, 1]
     for(i in 1:nrow(m)){
       draw_connection(dist[m[i, 1], 1], dist[m[i, 2], 1], dist[m[i, 1], 2], dist[m[i, 2], 2], h[i])
     }
@@ -163,7 +165,7 @@ draw_colnames = function(coln, ...){
 draw_rownames = function(rown, ...){
   n = length(rown)
   y = 1 - ((1:n)/n - 1/2/n)
-  grid.text(rown, x = unit(0.04, "npc"), y = y, vjust = 0.5, hjust = 0, gp = gpar(...))	
+  grid.text(rown, x = unit(0.04, "npc"), y = y, vjust = 0.5, hjust = 0, gp = gpar(...))
 }
 
 draw_legend = function(color, breaks, legend, ...){
@@ -241,36 +243,36 @@ vplayout = function(x, y){
   return(viewport(layout.pos.row = x, layout.pos.col = y))
 }
 
-heatmap_motor = function(matrix, border_color, cellwidth, cellheight, tree_col, tree_row, 
-                         treeheight_col, treeheight_row, filename, width, height, breaks, color, legend, 
-                         annotation, annotation_colors, annotation_legend, main, fontsize, fontsize_row, 
+heatmap_motor = function(matrix, border_color, cellwidth, cellheight, tree_col, tree_row,
+                         treeheight_col, treeheight_row, filename, width, height, breaks, color, legend,
+                         annotation, annotation_colors, annotation_legend, main, fontsize, fontsize_row,
                          fontsize_col, fmat, fontsize_number, useRaster, drawRowD,
                          explicit_rownames=NULL, ...){
   grid.newpage()
-  
+
   # Set layout
-  mindim = lo(coln = colnames(matrix), rown = rownames(matrix), nrow = nrow(matrix), 
-              ncol = ncol(matrix), cellwidth = cellwidth, cellheight = cellheight, 
-              treeheight_col = treeheight_col, treeheight_row = treeheight_row, 
-              legend = legend, annotation = annotation, annotation_colors = annotation_colors, 
-              annotation_legend = annotation_legend, main = main, fontsize = fontsize, fontsize_row = fontsize_row, 
+  mindim = lo(coln = colnames(matrix), rown = rownames(matrix), nrow = nrow(matrix),
+              ncol = ncol(matrix), cellwidth = cellwidth, cellheight = cellheight,
+              treeheight_col = treeheight_col, treeheight_row = treeheight_row,
+              legend = legend, annotation = annotation, annotation_colors = annotation_colors,
+              annotation_legend = annotation_legend, main = main, fontsize = fontsize, fontsize_row = fontsize_row,
               fontsize_col = fontsize_col,  ...)
-  
+
   if(!is.na(filename)){
     pushViewport(vplayout(1:5, 1:5))
-    
+
     if(is.na(height)){
       height = convertHeight(unit(0:1, "npc"), "inches", valueOnly = T)[2]
     }
     if(is.na(width)){
       width = convertWidth(unit(0:1, "npc"), "inches", valueOnly = T)[2]
     }
-    
+
     # Get file type
     r = regexpr("\\.[a-zA-Z]*$", filename)
     if(r == -1) stop("Improper filename")
     ending = substr(filename, r + 1, r + attr(r, "match.length"))
-    
+
     f = switch(ending,
                pdf = function(x, ...) pdf(x, ...),
                png = function(x, ...) png(x, units = "in", res = 300, ...),
@@ -280,62 +282,62 @@ heatmap_motor = function(matrix, border_color, cellwidth, cellheight, tree_col, 
                bmp = function(x, ...) bmp(x, units = "in", res = 300, ...),
                stop("File type should be: pdf, png, bmp, jpg, tiff")
     )
-    
+
     # print(sprintf("height:%f width:%f", height, width))
     f(filename, height = height, width = width)
-    heatmap_motor(matrix, cellwidth = cellwidth, cellheight = cellheight, 
-                  border_color = border_color, tree_col = tree_col, tree_row = tree_row, 
-                  treeheight_col = treeheight_col, treeheight_row = treeheight_row, breaks = breaks, 
-                  color = color, legend = legend, annotation = annotation, annotation_colors = annotation_colors, 
-                  annotation_legend = annotation_legend, filename = NA, main = main, fontsize = fontsize, 
-                  fontsize_row = fontsize_row, fontsize_col = fontsize_col, fmat = fmat, 
+    heatmap_motor(matrix, cellwidth = cellwidth, cellheight = cellheight,
+                  border_color = border_color, tree_col = tree_col, tree_row = tree_row,
+                  treeheight_col = treeheight_col, treeheight_row = treeheight_row, breaks = breaks,
+                  color = color, legend = legend, annotation = annotation, annotation_colors = annotation_colors,
+                  annotation_legend = annotation_legend, filename = NA, main = main, fontsize = fontsize,
+                  fontsize_row = fontsize_row, fontsize_col = fontsize_col, fmat = fmat,
                   fontsize_number =  fontsize_number, useRaster = useRaster, drawRowD = drawRowD,
                   explicit_rownames=NULL, ...)
     dev.off()
     upViewport()
     return()
   }
-  
-  # Omit border color if cell size is too small 
+
+  # Omit border color if cell size is too small
   if(mindim < 3) border_color = NA
-  
+
   # Draw title
   if(!is.na(main)){
     pushViewport(vplayout(1, 2))
     draw_main(main, fontsize = 1.3 * fontsize, ...)
     upViewport()
   }
-  
+
   # Draw tree for the columns
   if(!is.na(tree_col[[1]][1]) & treeheight_col != 0){
     pushViewport(vplayout(2, 2))
     draw_dendrogram(tree_col, horizontal = T)
     upViewport()
   }
-  
+
   # Draw tree for the rows
   if( drawRowD == TRUE | nrow(matrix) <= 200 ){
     if(!is.na(tree_row[[1]][1]) & treeheight_row != 0 ){
       pushViewport(vplayout(4, 1))
       draw_dendrogram(tree_row, horizontal = F)
       upViewport()
-    }  
+    }
   }
-  
+
   # Draw matrix
   vp = vplayout(4, 2)
   draw_matrix(matrix, border_color, fmat, fontsize_number,vp=vp)
   pushViewport(vp)
   upViewport()
-  
+
   #Draw colnames
   if(length(colnames(matrix)) != 0){
     pushViewport(vplayout(5, 2))
     pars = list(colnames(matrix), fontsize = fontsize_col, ...)
     do.call(draw_colnames, pars)
     upViewport()
-  }  
-  
+  }
+
   #Draw rownames
   if(length(rownames(matrix)) != 0 ){
     if(is.null(explicit_rownames) == 'TRUE'){
@@ -354,7 +356,7 @@ heatmap_motor = function(matrix, border_color, cellwidth, cellheight, tree_col, 
     draw_annotations(converted_annotation, border_color)
     upViewport()
   }
-  
+
   # Draw annotation legend
   if(!is.na(annotation[[1]][1]) & annotation_legend){
     if( length(rownames(matrix)) <= 70 ) {
@@ -366,7 +368,7 @@ heatmap_motor = function(matrix, border_color, cellwidth, cellheight, tree_col, 
     draw_annotation_legend(annotation, annotation_colors, border_color, fontsize = fontsize, ...)
     upViewport()
   }
-  
+
   # Draw legend IF not drawing the ROW names
   if(!is.na(legend[1])){
     length(colnames(matrix))
@@ -380,7 +382,7 @@ heatmap_motor = function(matrix, border_color, cellwidth, cellheight, tree_col, 
       upViewport()
     }
   }
-  
+
 }
 
 generate_breaks = function(x, n, center = F){
@@ -391,7 +393,7 @@ generate_breaks = function(x, n, center = F){
   else{
     res = seq(min(x, na.rm = T), max(x, na.rm = T), length.out = n + 1)
   }
-  
+
   return(res)
 }
 
@@ -423,7 +425,7 @@ cluster_mat = function(mat, distance, method, cor_method){
       d = dist(mat, method = distance)
     }
   }
-  
+
   return(flashClust(d, method = method)) #hclust replaced by flashClust from WCGNA (much faster than hclust)
 }
 
@@ -459,12 +461,12 @@ generate_annotation_colours = function(annotation, annotation_colors, drop){
       }
     }
   }
-  
-  factor_colors = hsv((seq(0, 1, length.out = count + 1)[-1] + 
+
+  factor_colors = hsv((seq(0, 1, length.out = count + 1)[-1] +
                          0.2)%%1, 0.7, 0.95)
-  
+
   set.seed(3453)
-  
+
   for(i in 1:ncol(annotation)){
     if(!(colnames(annotation)[i] %in% names(annotation_colors))){
       if(is.character(annotation[, i]) | is.factor(annotation[, i])){
@@ -495,107 +497,107 @@ kmeans_pheatmap = function(mat, k = min(nrow(mat), 150), sd_limit = NA, ...){
   # Filter data
   if(!is.na(sd_limit)){
     s = apply(mat, 1, sd)
-    mat = mat[s > sd_limit, ]	
+    mat = mat[s > sd_limit, ]
   }
-  
+
   # Cluster data
   set.seed(1245678)
   km = kmeans(mat, k, iter.max = 100)
   mat2 = km$centers
-  
+
   # Compose rownames
   t = table(km$cluster)
   rownames(mat2) = sprintf("cl%s_size_%d", names(t), t)
-  
+
   # Draw heatmap
   pheatmap(mat2, ...)
 }
 
 #' A function to draw clustered heatmaps.
-#' 
-#' A function to draw clustered heatmaps where one has better control over some graphical 
-#' parameters such as cell size, etc. 
-#' 
-#' The function also allows to aggregate the rows using kmeans clustering. This is 
-#' advisable if number of rows is so big that R cannot handle their hierarchical 
-#' clustering anymore, roughly more than 1000. Instead of showing all the rows 
-#' separately one can cluster the rows in advance and show only the cluster centers. 
+#'
+#' A function to draw clustered heatmaps where one has better control over some graphical
+#' parameters such as cell size, etc.
+#'
+#' The function also allows to aggregate the rows using kmeans clustering. This is
+#' advisable if number of rows is so big that R cannot handle their hierarchical
+#' clustering anymore, roughly more than 1000. Instead of showing all the rows
+#' separately one can cluster the rows in advance and show only the cluster centers.
 #' The number of clusters can be tuned with parameter kmeans_k.
 #'
 #' @param mat numeric matrix of the values to be plotted.
 #' @param color vector of colors used in heatmap.
-#' @param kmeans_k the number of kmeans clusters to make, if we want to agggregate the 
+#' @param kmeans_k the number of kmeans clusters to make, if we want to agggregate the
 #' rows before drawing heatmap. If NA then the rows are not aggregated.
-#' @param breaks a sequence of numbers that covers the range of values in mat and is one 
-#' element longer than color vector. Used for mapping values to colors. Useful, if needed 
-#' to map certain values to certain colors, to certain values. If value is NA then the 
+#' @param breaks a sequence of numbers that covers the range of values in mat and is one
+#' element longer than color vector. Used for mapping values to colors. Useful, if needed
+#' to map certain values to certain colors, to certain values. If value is NA then the
 #' breaks are calculated automatically.
-#' @param border_color color of cell borders on heatmap, use NA if no border should be 
+#' @param border_color color of cell borders on heatmap, use NA if no border should be
 #' drawn.
-#' @param cellwidth individual cell width in points. If left as NA, then the values 
+#' @param cellwidth individual cell width in points. If left as NA, then the values
 #' depend on the size of plotting window.
-#' @param cellheight individual cell height in points. If left as NA, 
+#' @param cellheight individual cell height in points. If left as NA,
 #' then the values depend on the size of plotting window.
-#' @param scale character indicating if the values should be centered and scaled in 
-#' either the row direction or the column direction, or none. Corresponding values are 
+#' @param scale character indicating if the values should be centered and scaled in
+#' either the row direction or the column direction, or none. Corresponding values are
 #' \code{"row"}, \code{"column"} and \code{"none"}
 #' @param cluster_rows boolean values determining if rows should be clustered,
 #' @param cluster_cols boolean values determining if columns should be clustered.
-#' @param clustering_distance_rows distance measure used in clustering rows. Possible 
-#' values are \code{"correlation"} for Pearson correlation and all the distances 
-#' supported by \code{\link{dist}}, such as \code{"euclidean"}, etc. If the value is none 
+#' @param clustering_distance_rows distance measure used in clustering rows. Possible
+#' values are \code{"correlation"} for Pearson correlation and all the distances
+#' supported by \code{\link{dist}}, such as \code{"euclidean"}, etc. If the value is none
 #' of the above it is assumed that a distance matrix is provided.
-#' @param clustering_distance_cols distance measure used in clustering columns. Possible 
+#' @param clustering_distance_cols distance measure used in clustering columns. Possible
 #' values the same as for clustering_distance_rows.
-#' @param clustering_method clustering method used. Accepts the same values as 
+#' @param clustering_method clustering method used. Accepts the same values as
 #' \code{\link{hclust}}.
-#' @param treeheight_row the height of a tree for rows, if these are clustered. 
+#' @param treeheight_row the height of a tree for rows, if these are clustered.
 #' Default value 50 points.
-#' @param treeheight_col the height of a tree for columns, if these are clustered. 
+#' @param treeheight_col the height of a tree for columns, if these are clustered.
 #' Default value 50 points.
 #' @param legend logical to determine if legend should be drawn or not.
 #' @param legend_breaks vector of breakpoints for the legend.
 #' @param legend_labels vector of labels for the \code{legend_breaks}.
-#' @param annotation data frame that specifies the annotations shown on top of the 
-#' columns. Each row defines the features for a specific column. The columns in the data 
-#' and rows in the annotation are matched using corresponding row and column names. Note 
+#' @param annotation data frame that specifies the annotations shown on top of the
+#' columns. Each row defines the features for a specific column. The columns in the data
+#' and rows in the annotation are matched using corresponding row and column names. Note
 #' that color schemes takes into account if variable is continuous or discrete.
-#' @param annotation_colors list for specifying annotation track colors manually. It is 
-#' possible to define the colors for only some of the features. Check examples for 
+#' @param annotation_colors list for specifying annotation track colors manually. It is
+#' possible to define the colors for only some of the features. Check examples for
 #' details.
-#' @param annotation_legend boolean value showing if the legend for annotation tracks 
-#' should be drawn. 
+#' @param annotation_legend boolean value showing if the legend for annotation tracks
+#' should be drawn.
 #' @param drop_levels logical to determine if unused levels are also shown in the legend
 #' @param show_rownames boolean specifying if column names are be shown.
 #' @param show_colnames boolean specifying if column names are be shown.
 #' @param main the title of the plot
-#' @param fontsize base fontsize for the plot 
-#' @param fontsize_row fontsize for rownames (Default: fontsize) 
-#' @param fontsize_col fontsize for colnames (Default: fontsize) 
-#' @param display_numbers logical determining if the numeric values are also printed to 
-#' the cells. 
-#' @param number_format format strings (C printf style) of the numbers shown in cells. 
-#' For example "\code{\%.2f}" shows 2 decimal places and "\code{\%.1e}" shows exponential 
-#' notation (see more in \code{\link{sprintf}}).    
+#' @param fontsize base fontsize for the plot
+#' @param fontsize_row fontsize for rownames (Default: fontsize)
+#' @param fontsize_col fontsize for colnames (Default: fontsize)
+#' @param display_numbers logical determining if the numeric values are also printed to
+#' the cells.
+#' @param number_format format strings (C printf style) of the numbers shown in cells.
+#' For example "\code{\%.2f}" shows 2 decimal places and "\code{\%.1e}" shows exponential
+#' notation (see more in \code{\link{sprintf}}).
 #' @param fontsize_number fontsize of the numbers displayed in cells
-#' @param filename file path where to save the picture. Filetype is decided by 
+#' @param filename file path where to save the picture. Filetype is decided by
 #' the extension in the path. Currently following formats are supported: png, pdf, tiff,
-#'  bmp, jpeg. Even if the plot does not fit into the plotting window, the file size is 
+#'  bmp, jpeg. Even if the plot does not fit into the plotting window, the file size is
 #' calculated so that the plot would fit there, unless specified otherwise.
 #' @param width manual option for determining the output file width in inches.
 #' @param height manual option for determining the output file height in inches.
-#' @param \dots graphical parameters for the text used in plot. Parameters passed to 
-#' \code{\link{grid.text}}, see \code{\link{gpar}}. 
-#' 
-#' @return 
-#' Invisibly a list of components 
+#' @param \dots graphical parameters for the text used in plot. Parameters passed to
+#' \code{\link{grid.text}}, see \code{\link{gpar}}.
+#'
+#' @return
+#' Invisibly a list of components
 #' \itemize{
-#' 	\item \code{tree_row} the clustering of rows as \code{\link{hclust}} object 
+#' 	\item \code{tree_row} the clustering of rows as \code{\link{hclust}} object
 #' 	\item \code{tree_col} the clustering of columns as \code{\link{hclust}} object
-#' 	\item \code{kmeans} the kmeans clustering of rows if parameter \code{kmeans_k} was 
-#' specified 
+#' 	\item \code{kmeans} the kmeans clustering of rows if parameter \code{kmeans_k} was
+#' specified
 #' }
-#' 
+#'
 #' @author  Raivo Kolde <rkolde@@gmail.com>
 #' @examples
 #'  # Generate some data
@@ -605,7 +607,7 @@ kmeans_pheatmap = function(mat, k = min(nrow(mat), 150), sd_limit = NA, ...){
 #' test[15:20, seq(2, 10, 2)] = test[15:20, seq(2, 10, 2)] + 4
 #' colnames(test) = paste("Test", 1:10, sep = "")
 #' rownames(test) = paste("Gene", 1:20, sep = "")
-#' 
+#'
 #' # Draw heatmaps
 #' pheatmap(test)
 #' pheatmap(test, kmeans_k = 2)
@@ -615,52 +617,52 @@ kmeans_pheatmap = function(mat, k = min(nrow(mat), 150), sd_limit = NA, ...){
 #' pheatmap(test, legend = FALSE)
 #' pheatmap(test, display_numbers = TRUE)
 #' pheatmap(test, display_numbers = TRUE, number_format = "%.1e")
-#' pheatmap(test, cluster_row = FALSE, legend_breaks = -1:4, legend_labels = c("0", 
+#' pheatmap(test, cluster_row = FALSE, legend_breaks = -1:4, legend_labels = c("0",
 #' "1e-4", "1e-3", "1e-2", "1e-1", "1"))
 #' pheatmap(test, cellwidth = 15, cellheight = 12, main = "Example heatmap")
 #' pheatmap(test, cellwidth = 15, cellheight = 12, fontsize = 8, filename = "test.pdf")
-#' 
-#' 
+#'
+#'
 #' # Generate column annotations
-#' annotation = data.frame(Var1 = factor(1:10 %% 2 == 0, 
+#' annotation = data.frame(Var1 = factor(1:10 %% 2 == 0,
 #' 				labels = c("Class1", "Class2")), Var2 = 1:10)
 #' annotation$Var1 = factor(annotation$Var1, levels = c("Class1", "Class2", "Class3"))
 #' rownames(annotation) = paste("Test", 1:10, sep = "")
-#' 
+#'
 #' pheatmap(test, annotation = annotation)
 #' pheatmap(test, annotation = annotation, annotation_legend = FALSE)
 #' pheatmap(test, annotation = annotation, annotation_legend = FALSE, drop_levels = FALSE)
-#' 
+#'
 #' # Specify colors
 #' Var1 = c("navy", "darkgreen")
 #' names(Var1) = c("Class1", "Class2")
 #' Var2 = c("lightgreen", "navy")
-#' 
+#'
 #' ann_colors = list(Var1 = Var1, Var2 = Var2)
-#' 
+#'
 #' pheatmap(test, annotation = annotation, annotation_colors = ann_colors, main = "Example")
-#' 
+#'
 #' # Specifying clustering from distance matrix
 #' drows = dist(test, method = "minkowski")
 #' dcols = dist(t(test), method = "minkowski")
 #' pheatmap(test, clustering_distance_rows = drows, clustering_distance_cols = dcols)
 #'
 #' @export
-memoised_pheatmap = function(mat, color = colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100), 
-                             kmeans_k = NA, breaks = NA, border_color = "grey60", cellwidth = NA, 
-                             cellheight = NA, scale = "none", cluster_rows = TRUE, cluster_cols = TRUE, 
-                             clustering_distance_rows = "euclidean", clustering_distance_cols = "euclidean", 
-                             clustering_method = "complete",  treeheight_row = ifelse(cluster_rows, 50, 0), 
-                             treeheight_col = ifelse(cluster_cols, 50, 0), legend = TRUE, legend_breaks = NA, 
-                             legend_labels = NA, annotation = NA, annotation_colors = NA, annotation_legend = TRUE, 
-                             drop_levels = TRUE, show_rownames = T, show_colnames = T, main = NA, fontsize = 10, 
-                             fontsize_row = fontsize, fontsize_col = fontsize, display_numbers = F, number_format = "%.2f", 
-                             fontsize_number = 0.8 * fontsize, filename = NA, width = NA, height = NA, 
+memoised_pheatmap = function(mat, color = colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(100),
+                             kmeans_k = NA, breaks = NA, border_color = "grey60", cellwidth = NA,
+                             cellheight = NA, scale = "none", cluster_rows = TRUE, cluster_cols = TRUE,
+                             clustering_distance_rows = "euclidean", clustering_distance_cols = "euclidean",
+                             clustering_method = "complete",  treeheight_row = ifelse(cluster_rows, 50, 0),
+                             treeheight_col = ifelse(cluster_cols, 50, 0), legend = TRUE, legend_breaks = NA,
+                             legend_labels = NA, annotation = NA, annotation_colors = NA, annotation_legend = TRUE,
+                             drop_levels = TRUE, show_rownames = T, show_colnames = T, main = NA, fontsize = 10,
+                             fontsize_row = fontsize, fontsize_col = fontsize, display_numbers = F, number_format = "%.2f",
+                             fontsize_number = 0.8 * fontsize, filename = NA, width = NA, height = NA,
                              useRaster=FALSE, drawRowD=TRUE, cor_method = "pearson",
                              explicit_rownames = NULL, ...){
   #time at which process started
   start_time = proc.time()
-  
+
   # Preprocess matrix
   mat = as.matrix(mat)
   if(scale != "none"){
@@ -669,8 +671,8 @@ memoised_pheatmap = function(mat, color = colorRampPalette(rev(brewer.pal(n = 7,
       breaks = generate_breaks(mat, length(color), center = T)
     }
   }
-  
-  
+
+
   # Kmeans
   if(!is.na(kmeans_k)){
     # Cluster data
@@ -683,7 +685,7 @@ memoised_pheatmap = function(mat, color = colorRampPalette(rev(brewer.pal(n = 7,
   else{
     km = NA
   }
-  
+
   # Do clustering
   if(cluster_rows){
     tree_row = memoised_cluster_mat(mat, distance = clustering_distance_rows, method = clustering_method, cor_method=cor_method)
@@ -697,7 +699,7 @@ memoised_pheatmap = function(mat, color = colorRampPalette(rev(brewer.pal(n = 7,
     tree_row = NA
     treeheight_row = 0
   }
-  
+
   if(cluster_cols){
     tree_col = memoised_cluster_mat(t(mat), distance = clustering_distance_cols, method = clustering_method,  cor_method=cor_method)
     #tree_col = cluster_mat(t(mat), distance = clustering_distance_cols, method = clustering_method)
@@ -707,8 +709,8 @@ memoised_pheatmap = function(mat, color = colorRampPalette(rev(brewer.pal(n = 7,
     tree_col = NA
     treeheight_col = 0
   }
-  
-  # Format numbers to be displayed in cells 
+
+  # Format numbers to be displayed in cells
   if(display_numbers){
     fmat = matrix(sprintf(number_format, mat), nrow = nrow(mat), ncol = ncol(mat))
     attr(fmat, "draw") = TRUE
@@ -717,16 +719,16 @@ memoised_pheatmap = function(mat, color = colorRampPalette(rev(brewer.pal(n = 7,
     fmat = matrix(NA, nrow = nrow(mat), ncol = ncol(mat))
     attr(fmat, "draw") = FALSE
   }
-  
-  
+
+
   # Colors and scales
   if(!is.na(legend_breaks[1]) & !is.na(legend_labels[1])){
     if(length(legend_breaks) != length(legend_labels)){
       stop("Lengths of legend_breaks and legend_labels must be the same")
     }
   }
-  
-  
+
+
   if(is.na(breaks[1])){
     breaks = generate_breaks(as.vector(mat), length(color))
   }
@@ -736,7 +738,7 @@ memoised_pheatmap = function(mat, color = colorRampPalette(rev(brewer.pal(n = 7,
   }
   else if(legend & !is.na(legend_breaks[1])){
     legend = legend_breaks[legend_breaks >= min(breaks) & legend_breaks <= max(breaks)]
-    
+
     if(!is.na(legend_labels[1])){
       legend_labels = legend_labels[legend_breaks >= min(breaks) & legend_breaks <= max(breaks)]
       names(legend) = legend_labels
@@ -749,30 +751,30 @@ memoised_pheatmap = function(mat, color = colorRampPalette(rev(brewer.pal(n = 7,
     legend = NA
   }
   mat = scale_colours(mat, col = color, breaks = breaks)
-  
+
   # Preparing annotation colors
   if(!is.na(annotation[[1]][1])){
     annotation = annotation[colnames(mat), , drop = F]
     annotation_colors = generate_annotation_colours(annotation, annotation_colors, drop = drop_levels)
   }
-  
+
   if(!show_rownames){
     rownames(mat) = NULL
   }
   if(!show_colnames){
     colnames(mat) = NULL
   }
-  
+
   # Draw heatmap
-  heatmap_motor(mat, border_color = border_color, cellwidth = cellwidth, cellheight = cellheight, 
-                treeheight_col = treeheight_col, treeheight_row = treeheight_row, tree_col = tree_col, 
-                tree_row = tree_row, filename = filename, width = width, height = height, breaks = breaks, 
-                color = color, legend = legend, annotation = annotation, annotation_colors = annotation_colors, 
-                annotation_legend = annotation_legend, main = main, fontsize = fontsize, 
-                fontsize_row = fontsize_row, fontsize_col = fontsize_col, fmat = fmat, 
+  heatmap_motor(mat, border_color = border_color, cellwidth = cellwidth, cellheight = cellheight,
+                treeheight_col = treeheight_col, treeheight_row = treeheight_row, tree_col = tree_col,
+                tree_row = tree_row, filename = filename, width = width, height = height, breaks = breaks,
+                color = color, legend = legend, annotation = annotation, annotation_colors = annotation_colors,
+                annotation_legend = annotation_legend, main = main, fontsize = fontsize,
+                fontsize_row = fontsize_row, fontsize_col = fontsize_col, fmat = fmat,
                 fontsize_number = fontsize_number, useRaster=useRaster, drawRowD=drawRowD,
                 explicit_rownames = explicit_rownames, ...)
-  
+
   #end time
   end_time = proc.time()
   total_time = end_time - start_time

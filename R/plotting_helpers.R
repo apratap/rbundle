@@ -1,8 +1,8 @@
-######################
 library("gridExtra")
 library("ggplot2")
 library("grid")
-#####################
+
+
 
 tableToPlot <- function(xyTable){
   qplot(0:1, 0:1, geom = "blank") +
@@ -49,6 +49,7 @@ grid_arrange_shared_legend <- function(plots, ncol = length(plots), nrow = 1, po
   grid.newpage()
   grid.draw(combined)
 
+  invisible()
 }
 
 
